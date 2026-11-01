@@ -41,6 +41,7 @@ import org.apache.druid.sql.calcite.aggregation.Aggregation;
 import org.apache.druid.sql.calcite.aggregation.Aggregations;
 import org.apache.druid.sql.calcite.aggregation.SqlAggregator;
 import org.apache.druid.sql.calcite.expression.DruidExpression;
+import org.apache.druid.sql.calcite.expression.OperandType;
 import org.apache.druid.sql.calcite.expression.OperatorConversions;
 import org.apache.druid.sql.calcite.parser.DruidSqlParserUtils;
 import org.apache.druid.sql.calcite.planner.PlannerContext;
@@ -62,9 +63,11 @@ public class DoublesSketchApproxQuantileSqlAggregator implements SqlAggregator
   private static final SqlAggFunction FUNCTION_INSTANCE =
       OperatorConversions.aggregatorBuilder(NAME)
                          .operandNames("column", "probability", "k")
-                         .operandTypes(SqlTypeFamily.NUMERIC, SqlTypeFamily.NUMERIC, SqlTypeFamily.EXACT_NUMERIC)
-                         .operandComplexTypes(0, DoublesSketchModule.TYPE)
-                         .coercibleOperands(0)
+                         .operandTypes(
+                             OperandType.numeric().orComplex(DoublesSketchModule.TYPE).coerceStrings(),
+                             OperandType.of(SqlTypeFamily.NUMERIC),
+                             OperandType.of(SqlTypeFamily.EXACT_NUMERIC)
+                         )
                          .returnTypeNonNull(SqlTypeName.DOUBLE)
                          .requiredOperandCount(2)
                          .literalOperands(1, 2)

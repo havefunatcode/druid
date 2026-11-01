@@ -608,9 +608,10 @@ public class OperatorConversionsTest
       return OperatorConversions
           .operatorBuilder(name)
           .operandNames("x", "y")
-          .operandTypes(SqlTypeFamily.NUMERIC, SqlTypeFamily.NUMERIC)
-          .operandComplexTypes(0, ALLOWED_COMPLEX_TYPE)
-          .coercibleOperands(0)
+          .operandTypes(
+              OperandType.numeric().orComplex(ALLOWED_COMPLEX_TYPE).coerceStrings(),
+              OperandType.of(SqlTypeFamily.NUMERIC)
+          )
           .returnTypeNonNull(SqlTypeName.DOUBLE)
           .build();
     }
@@ -652,6 +653,25 @@ public class OperatorConversionsTest
 
       Assertions.assertEquals(
           "'testSignatureWithoutNames(<INTEGER>, [<DATE>, [<ANY>]])'",
+          typeChecker.getAllowedSignatures(function, function.getName())
+      );
+    }
+
+    @Test
+    public void testSignatureWithoutNamesWithComplexTypes()
+    {
+      SqlFunction function = OperatorConversions
+          .operatorBuilder("testSignatureWithoutNamesWithComplexTypes")
+          .operandTypes(
+              OperandType.numeric().orComplex(ALLOWED_COMPLEX_TYPE).coerceStrings(),
+              OperandType.of(SqlTypeFamily.NUMERIC)
+          )
+          .returnTypeNonNull(SqlTypeName.DOUBLE)
+          .build();
+      SqlOperandTypeChecker typeChecker = function.getOperandTypeChecker();
+
+      Assertions.assertEquals(
+          "'testSignatureWithoutNamesWithComplexTypes(<NUMERIC | COMPLEX<allowedComplex>>, <NUMERIC>)'",
           typeChecker.getAllowedSignatures(function, function.getName())
       );
     }

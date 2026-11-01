@@ -43,6 +43,7 @@ import org.apache.druid.sql.calcite.aggregation.Aggregations;
 import org.apache.druid.sql.calcite.aggregation.SqlAggregator;
 import org.apache.druid.sql.calcite.expression.DefaultOperandTypeChecker;
 import org.apache.druid.sql.calcite.expression.DruidExpression;
+import org.apache.druid.sql.calcite.expression.OperandType;
 import org.apache.druid.sql.calcite.parser.DruidSqlParserUtils;
 import org.apache.druid.sql.calcite.planner.PlannerContext;
 import org.apache.druid.sql.calcite.rel.InputAccessor;
@@ -211,9 +212,11 @@ public class QuantileSqlAggregator implements SqlAggregator
           DefaultOperandTypeChecker
               .builder()
               .operandNames("column", "probability", "resolution")
-              .operandTypes(SqlTypeFamily.NUMERIC, SqlTypeFamily.NUMERIC, SqlTypeFamily.EXACT_NUMERIC)
-              .operandComplexTypes(0, ApproximateHistogramAggregatorFactory.TYPE)
-              .coercibleOperands(0)
+              .operandTypes(
+                  OperandType.numeric().orComplex(ApproximateHistogramAggregatorFactory.TYPE).coerceStrings(),
+                  OperandType.of(SqlTypeFamily.NUMERIC),
+                  OperandType.of(SqlTypeFamily.EXACT_NUMERIC)
+              )
               .requiredOperandCount(2)
               .literalOperands(1, 2)
               .build(),
