@@ -61,10 +61,14 @@ public final class OperandType
 
   /**
    * Returns an operand type that also accepts the given complex types. Comparison uses
-   * {@link RowSignatures.ComplexSqlType#getColumnType()}, so it does not depend on nullability.
+   * {@link RowSignatures.ComplexSqlType#getColumnType()}, so it does not depend on nullability. Not allowed for
+   * {@link SqlTypeFamily#ANY} operands, which accept complex types already.
    */
   public OperandType orComplex(final ColumnType... types)
   {
+    if (family == SqlTypeFamily.ANY) {
+      throw DruidException.defensive("orComplex() does not apply to [%s] operands", SqlTypeFamily.ANY);
+    }
     return new OperandType(
         family,
         ImmutableSet.<ColumnType>builder().addAll(complexTypes).add(types).build(),

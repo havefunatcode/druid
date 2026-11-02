@@ -688,6 +688,124 @@ public class FixedBucketsHistogramQuantileSqlAggregatorTest extends BaseCalciteQ
   }
 
   @Test
+  public void testQuantileOnStringColumn()
+  {
+    // string columns are implicitly cast to numbers, like testQuantileOnCastedString
+    testQuery(
+        "SELECT APPROX_QUANTILE_FIXED_BUCKETS(dim1, 0.5, 20, 0.0, 10.0) FROM foo",
+        ImmutableList.of(
+            Druids.newTimeseriesQueryBuilder()
+                  .dataSource(CalciteTests.DATASOURCE1)
+                  .intervals(new MultipleIntervalSegmentSpec(ImmutableList.of(Filtration.eternity())))
+                  .granularity(Granularities.ALL)
+                  .virtualColumns(
+                      new ExpressionVirtualColumn(
+                          "v0",
+                          "CAST(\"dim1\", 'DOUBLE')",
+                          ColumnType.FLOAT,
+                          TestExprMacroTable.INSTANCE
+                      )
+                  )
+                  .aggregators(ImmutableList.of(
+                      new FixedBucketsHistogramAggregatorFactory(
+                          "a0:agg",
+                          "v0",
+                          20,
+                          0.0d,
+                          10.0d,
+                          FixedBucketsHistogram.OutlierHandlingMode.IGNORE,
+                          false
+                      )
+                  ))
+                  .postAggregators(
+                      new QuantilePostAggregator("a0", "a0:agg", 0.5f)
+                  )
+                  .context(QUERY_CONTEXT_DEFAULT)
+                  .build()
+        ),
+        ImmutableList.of(
+            new Object[]{1.5}
+        )
+    );
+  }
+
+  @Test
+  public void testQuantileOnNumericStringLiteral()
+  {
+    // string literals that can be parsed as numbers are accepted
+    testQuery(
+        "SELECT APPROX_QUANTILE_FIXED_BUCKETS('1.5', 0.5, 20, 0.0, 10.0) FROM foo",
+        ImmutableList.of(
+            Druids.newTimeseriesQueryBuilder()
+                  .dataSource(CalciteTests.DATASOURCE1)
+                  .intervals(new MultipleIntervalSegmentSpec(ImmutableList.of(Filtration.eternity())))
+                  .granularity(Granularities.ALL)
+                  .virtualColumns(
+                      new ExpressionVirtualColumn(
+                          "v0",
+                          "1.5",
+                          ColumnType.FLOAT,
+                          TestExprMacroTable.INSTANCE
+                      )
+                  )
+                  .aggregators(ImmutableList.of(
+                      new FixedBucketsHistogramAggregatorFactory(
+                          "a0:agg",
+                          "v0",
+                          20,
+                          0.0d,
+                          10.0d,
+                          FixedBucketsHistogram.OutlierHandlingMode.IGNORE,
+                          false
+                      )
+                  ))
+                  .postAggregators(
+                      new QuantilePostAggregator("a0", "a0:agg", 0.5f)
+                  )
+                  .context(QUERY_CONTEXT_DEFAULT)
+                  .build()
+        ),
+        ImmutableList.of(
+            new Object[]{1.75}
+        )
+    );
+  }
+
+  @Test
+  public void testQuantileOnTimeColumn()
+  {
+    // timestamps are used as numbers of milliseconds
+    testQuery(
+        "SELECT APPROX_QUANTILE_FIXED_BUCKETS(__time, 0.5, 20, 946684800000.0, 978393600000.0) FROM foo",
+        ImmutableList.of(
+            Druids.newTimeseriesQueryBuilder()
+                  .dataSource(CalciteTests.DATASOURCE1)
+                  .intervals(new MultipleIntervalSegmentSpec(ImmutableList.of(Filtration.eternity())))
+                  .granularity(Granularities.ALL)
+                  .aggregators(ImmutableList.of(
+                      new FixedBucketsHistogramAggregatorFactory(
+                          "a0:agg",
+                          "__time",
+                          20,
+                          946684800000.0d,
+                          978393600000.0d,
+                          FixedBucketsHistogram.OutlierHandlingMode.IGNORE,
+                          false
+                      )
+                  ))
+                  .postAggregators(
+                      new QuantilePostAggregator("a0", "a0:agg", 0.5f)
+                  )
+                  .context(QUERY_CONTEXT_DEFAULT)
+                  .build()
+        ),
+        ImmutableList.of(
+            new Object[]{947741786112.0}
+        )
+    );
+  }
+
+  @Test
   public void testQuantileWithNonNumericStringLiteral()
   {
     // verify invalid queries return 400 (user error)

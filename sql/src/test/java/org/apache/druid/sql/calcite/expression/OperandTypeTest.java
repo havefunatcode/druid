@@ -66,6 +66,16 @@ public class OperandTypeTest
   }
 
   @Test
+  public void testOrComplexOnAnyOperand()
+  {
+    final DruidException e = Assertions.assertThrows(
+        DruidException.class,
+        () -> OperandType.of(SqlTypeFamily.ANY).orComplex(COMPLEX_TYPE)
+    );
+    Assertions.assertEquals("orComplex() does not apply to [ANY] operands", e.getMessage());
+  }
+
+  @Test
   public void testCoerceStrings()
   {
     final OperandType numeric = OperandType.numeric().orComplex(COMPLEX_TYPE);
